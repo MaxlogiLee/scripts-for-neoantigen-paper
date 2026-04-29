@@ -1,0 +1,240 @@
+---
+title: "Fig.3"
+output: html_document
+---
+
+### clinical and mutation
+
+```{r,warning=F,message=F,fig.height=6,fig.width=12}
+library(openxlsx)
+library(foreach)
+library(ComplexHeatmap)
+library(reshape2)
+cl=read.xlsx("data/clinical_data.xlsx")
+load("data/Peptide_warterfall_data_HLAcheck.Rdata")
+
+sp_ord=c("PCA-01-PST","PCA-02-PST","PCA-03-PST","PCA-04-PST","PCA-05-PST","PCA-06-PST",
+         "DAC13","DAC71","DAC73","DAC22","DAC30","DAC4","DAC5","DAC50","DAC53","DAC57","DAC69",
+         "CH-17-0036","CH-17-0049","CH-17-0053","CH-17-0060",
+         "CH-17-0061","CH-17-0064","CH-17-0068","CH-17-0070",
+         "CH-17-0072","CH-17-0074","CH-17-0080","CH-17-0087",
+         "CH-17-0091","TCC-01","TCC-02","TCC-03")
+
+cl$Sample=cl$Sequencing.ID
+cl$Sample=factor(cl$Sample,levels = sp_ord)
+cl=cl[order(cl$Sample),]
+
+col<-c("#13a983","#3f60aa","#44c1f0","#e8490f","#f18800","#e4ce00","#9ec417","blue","#631879FF","red","black")
+names(col)=c("Missense_Mutation","Frame_Shift_Del" ,"Nonsense_Mutation","In_Frame_Del","In_Frame_Ins","Translation_Start_Site","Frame_Shift_Ins","Nonstop_Mutation","Multi_Hit","Splice_Site","Del")
+
+ha=HeatmapAnnotation(Sex=cl$Sex,
+                     Age=cl$Age,
+                     Smoke=cl$Smoke,
+                     Alcohol=cl$Alcohol,
+                     Histology_Malignancy=cl$History.of.Malignancy,
+                     Family.History.of.Cancer=cl$Family.History.of.Cancer,
+                     Pretreatment.drug=cl$Pretreatment.drug,
+                     cT=cl$cT,
+                     cM=cl$cM,
+                     cN=cl$cN,
+                     pT=cl$pT,
+                     pM=cl$pM,
+                     pN=cl$pN,
+                     Stage=cl$Stage,
+                     Metastasis=cl$Metastasis,
+                     `TMB/MB\n(log10)`=anno_barplot(tmb[sp_ord,"total_perMB_log"],gp=gpar(fill= "#3B4992FF")),
+                     col=list(Sex=c("M"="#56B4E9","F"="#F0E442"), 
+                              Age=c("0~50"="#FFA500","51~60"="#E0700D","61~70"="#D05614","71~"="#C13C1B"), 
+                              Smoke=c("Yes"="#60B760","No"="#CAE7CA"),
+                              Alcohol=c("Yes"="#a50f15","No"="#fee5d9"),
+                              Histology_Malignancy=c("Yes"="#F5C710","No"="#FCF1C3"),
+                              Family.History.of.Cancer=c("Yes"="#81d2e3","No"="#e6f6f9"),
+                              Pretreatment.drug=c("Yes"="navy","No"="lightskyblue"),
+                              cT=c("/"="grey80","T1"="#c6c8e3","T2"="#8d91c6","T3"="#676cb3","T4"="#4147a0"),
+                              cM=c("/"="grey80","M0"="#e6d1c0","M1a"="#d6b297","M1b"="#bd8358","Mx"="#ad642e"),
+                              cN=c("/"="grey80","N0"="#ddebce","N1"="#c7dead","N2"="#a5c97b","Nx"="#8fbc5a"),
+                              pT=c("T1"="#bfd7e0","T2"="#94bdcc","T3"="#5495ad","T4"="#297b99","Tx"="#21627a"),
+                              pM=c("M0"="#dcd4e8","M1a"="#c5b8d9","M1b"="#a28dc2","Mx"="#8b71b3"),
+                              pN=c("N0"="#fee8cb","N1"="#fed9a8","N2"="#fdc274","Nx"="#fcb351"),
+                              Stage=c("I"= "#F7D3DA","I/IIIa"="#ad642e","II"="#EFA9B4","II/I"="#b0d4f0","III"="#E77E90","IV"="#DF536B","IVa"="#DF536B"),
+                              Metastasis=c("Yes"="#c4a3cd","No"="#f9f6fa")
+                              
+                     ),annotation_name_side = "left",gp=gpar(col="black",lwd=0.1),show_legend = T,simple_anno_size = unit(0.3,"cm"),
+                     annotation_name_gp = gpar(fontsize=8))
+
+hr=rowAnnotation(Frequency=anno_barplot(mut_freq[gn_ord],gp=gpar(fill="#197EC0FF"),axis_param = list(side="top")),
+                 freq=anno_text(paste(round(mut_freq[gn_ord],3)*100,"%",sep=""),gp=gpar(fontsize=8)))
+#pdf("Fig3_clinical_mutation.pdf",height = 6,width = 12,useDingbats = T)
+Heatmap(wf_dt[,sp_ord],col = col,cluster_rows = F,cluster_columns = F,
+        na_col = "white",border_gp = gpar(col="black"),top_annotation = ha,
+        right_annotation = hr,height = unit(length(gn_ord)*0.25,"cm"),width = unit(ncol(wf_dt)*0.25,"cm"),
+        column_split = factor(c(rep("Prostate",6),rep("DAC",11),rep("PDX",13),rep("GWA",3)),levels = c("Prostate","DAC","PDX","GWA")),
+        row_names_side = "left",row_names_gp = gpar(fontsize=8),column_names_gp = gpar(fontsize=8),name="Mutation",
+        column_names_side = "top")
+#dev.off()
+```
+
+### peptide heatmap
+
+```{r,warning=F,message=F,fig.height=14,fig.width=18}
+dat=read.xlsx("data/AllSample_Peptide_Canonical_NonCanonical_MsHLAp.xlsx")
+dat$PST_N=rowSums(dat[,c("MS_PCA-01-PST","MS_PCA-02-PST","MS_PCA-03-PST","MS_PCA-04-PST",
+                         "MS_PCA-05-PST","MS_PCA-06-PST")])
+dat$TCC_N=rowSums(dat[,c("MS_TCC-01","MS_TCC-02","MS_TCC-03")])
+dat$N=(dat$PST_N!=0)+(dat$DAC_N!=0)+(dat$PDX_N!=0)+(dat$TCC_N!=0)
+
+ms_metastasis=c("MS_PCA-01-L1","MS_PCA-01-SCLN","MS_PCA-01-MLN","MS_PCA-01-PMI",
+                "MS_PCA-01-RMLN","MS_PCA-01-BDI","MS_PCA-01-SVI","MS_PCA-05-PVLN-L",
+                "MS_PCA-04-OBLN-L","MS_PCA-04-OBLN-R","MS_PCA-04-EILN","MS_PCA-06-CILN-L",
+                "MS_PCA-06-IILN-R")
+grep_metastasis=c("grep_PCA-01-L1","grep_PCA-01-SCLN","grep_PCA-01-MLN","grep_PCA-01-PMI",
+                  "grep_PCA-01-RMLN","grep_PCA-01-BDI","grep_PCA-01-SVI","grep_PCA-05-PVLN-L",
+                  "grep_PCA-04-OBLN-L","grep_PCA-04-OBLN-R","grep_PCA-04-EILN","grep_PCA-06-CILN-L",
+                  "grep_PCA-06-IILN-R")
+
+ms_pst=c("PCA-01-PST","PCA-02-PST","PCA-03-PST","PCA-04-PST",
+         "PCA-05-PST","PCA-06-PST")
+ms_dac=c("DAC13","DAC71","DAC73","DAC22","DAC30","DAC4","DAC5",
+         "DAC50","DAC53","DAC57","DAC69")
+ms_pdx=c("CH-17-0036","CH-17-0049","CH-17-0053","CH-17-0060","CH-17-0061","CH-17-0064",
+         "CH-17-0068","CH-17-0070","CH-17-0072","CH-17-0074","CH-17-0080",
+         "CH-17-0087","CH-17-0091")
+ms_tcc=c("TCC-01","TCC-02","TCC-03")
+
+#set color
+type_col=c("#FF7F0EFF","#1F77B4FF","#2CA02CFF","#F0E685FF","#9467BDFF","#8C564BFF","#466983FF","#D62728FF","#E377C2FF","#E377C2FF")
+names(type_col)=c("BN","NCBI_Uniport","Mutation","Fusion","IR","TElocal","TEprof2","DN","Cis","Trans")
+
+{
+  pep1=dat$Peptide[dat$Multimapping==FALSE&dat$`source-annotated`!="BN"&dat$`source-annotated`!="NCBI_Uniport"&dat$N>1]
+  
+  ft=dat[is.element(dat$Peptide,pep1),]
+  
+  df_all=ft[,setdiff(colnames(ft),c(ms_metastasis,grep_metastasis))]
+  #4 diseases share
+  {
+    pep1=unique(df_all$Peptide[df_all$N==4])
+    df=df_all[is.element(df_all$Peptide,pep1),]
+    pep_ord=df[is.element(df$Peptide,pep1),c("Peptide",paste0("MS_",c(ms_pst,ms_dac,ms_pdx,ms_tcc)))]
+    pep_ord[is.na(pep_ord)]=0
+    pep_ord=pep_ord[rev(do.call(order,pep_ord[,-1])),]
+    #pep_ord=pep_ord[rowSums(pep_ord[,grep("MS_",colnames(pep_ord))])>=2,]
+    row_nm_4=pep_ord$Peptide
+  }
+  #3 diseases share
+  {
+    pep1=unique(df_all$Peptide[df_all$N==3])
+    df=df_all[is.element(df_all$Peptide,pep1),]
+    pep_ord=df[is.element(df$Peptide,pep1),c("Peptide",paste0("MS_",c(ms_pst,ms_dac,ms_pdx,ms_tcc)))]
+    pep_ord[is.na(pep_ord)]=0
+    pep_ord=pep_ord[rev(do.call(order,pep_ord[,-1])),]
+    #pep_ord=pep_ord[rowSums(pep_ord[,grep("MS_",colnames(pep_ord))])>=2,]
+    row_nm_3=pep_ord$Peptide
+  }
+  #2 diseases share
+  {
+    pep1=unique(df_all$Peptide[df_all$N==2])
+    df=df_all[is.element(df_all$Peptide,pep1),]
+    pep_ord=df[is.element(df$Peptide,pep1),c("Peptide",paste0("MS_",c(ms_pst,ms_dac,ms_pdx,ms_tcc)))]
+    pep_ord[is.na(pep_ord)]=0
+    pep_ord=pep_ord[rev(do.call(order,pep_ord[,-1])),]
+    #pep_ord=pep_ord[rowSums(pep_ord[,grep("MS_",colnames(pep_ord))])>=2,]
+    row_nm_2=pep_ord$Peptide
+  }
+  
+  ######
+  row_nm1=c(row_nm_4,row_nm_3,row_nm_2)
+  
+  df=df_all[is.element(df_all$Peptide,row_nm1),]
+  row_nm=c(row_nm1)
+  rownames(df)=df$Peptide
+  ht1=df[,c(grep("MS_",colnames(df)))]
+  colnames(ht1)=sub("MS_","",colnames(ht1))
+  ht1[is.na(ht1)]=0
+    
+  ht2=df[,c(grep("grep_",colnames(df)))]
+  colnames(ht2)=sub("grep_","",colnames(ht2))
+  ht2[ht2==0]=""
+  ht2[!is.na(ht2)&ht2!=""]="*"
+  ht2[is.na(ht2)]=""
+    
+  MS_ht=ht1[row_nm,]
+  MS_ht[is.na(MS_ht)]=0
+  MS_ht[MS_ht!=0]=1
+  cell_dt=ht2[row_nm,]
+  
+  MS_ht1=MS_ht[,c("PCA-01-PST","PCA-02-PST","PCA-03-PST","PCA-04-PST","PCA-05-PST","PCA-06-PST")]
+  MS_ht2=MS_ht[,7:17]
+  MS_ht3=MS_ht[,18:30]
+  MS_ht4=MS_ht[,32:34]
+  MS_ht6=MS_ht[,1,drop=F]
+    
+  cell_dt1=cell_dt[,c("PCA-01-PST","PCA-02-PST","PCA-03-PST","PCA-04-PST","PCA-05-PST","PCA-06-PST")]
+  cell_dt2=cell_dt[,7:17]
+  cell_dt3=cell_dt[,18:30]
+  cell_dt4=cell_dt[,32:34]
+  cell_dt6=cell_dt[,1,drop=F]
+    
+  anot_ht1=df[row_nm,c("CEDAR","IEDB","HLAthena","RNA","Protein")]
+  anot_ht1[anot_ht1==TRUE]=1
+  anot_ht1[anot_ht1==FALSE]=0
+  anot_ht2=df[row_nm,c("cancer_restricted"),drop=F]
+  anot_ht2[anot_ht2==TRUE]=1
+  anot_ht2[anot_ht2==FALSE]=0
+    
+  IPS_ht=df[row_nm,c("ASPC1_G517_WG630","ELISPOT","RNA_fish"),drop=F]
+  IPS_ht$RNA_fish=ifelse(IPS_ht$RNA_fish=="Yes",1,0)
+  IPS_ht[is.na(IPS_ht)]=0
+    
+  anot_ht4=df[row_nm,c("PublicPaper"),drop=F]
+    
+  exp_ht=df[row_nm,c("Elispot_ID","source-annotated","Gene"),drop=F]
+  exp_ht[is.na(exp_ht)]=""
+    
+  hr1=rowAnnotation(Source=exp_ht$`source-annotated`,
+                      col=list(Source=type_col),
+                      gp = gpar(col = "black"),
+                      gap = unit(4, "points"),simple_anno_size=unit(2,"mm"),
+                      annotation_name_side = "top")
+  hr4=rowAnnotation(SCI=anno_barplot(df[row_nm,"SCI"],axis_param = list(side="top"),gp = gpar(fill="#3B4992FF")),
+                      PublicPaper=anno_barplot(df[row_nm,"PublicPaper"],axis_param = list(side="top",at=c(0,1)),gp = gpar(fill="#3B4992FF")),
+                      Elispot_ID=anno_text(exp_ht$Elispot_ID,gp=gpar(fontsize=6),show_name = T),
+                      Gene=anno_text(exp_ht$Gene,gp=gpar(fontsize=6)),
+                      gap = unit(4, "points"),simple_anno_size=unit(2,"mm"),
+                      annotation_name_side = "top",annotation_name_rot=90)
+    
+  plt1=Heatmap(cbind(MS_ht1,MS_ht2,MS_ht3,MS_ht4,MS_ht6),col = c("white","#4DBBD5FF"),cluster_rows = F,cluster_columns = F,row_labels = df[row_nm,"Peptide"],column_names_side = "top",
+                 right_annotation = hr1,column_names_gp = gpar(fontsize=7),row_names_gp = gpar(fontsize=7),row_names_side = "left",
+                 show_row_names = T,show_row_dend = F,row_title_rot = 0,row_title_gp = gpar(fontsize=8),name="MS",
+                 row_split =factor(df[row_nm,c("source-annotated")],levels =c("NCBI_Uniport","Mutation","Fusion","IR","TElocal","TEprof2",
+                                                                              "DN","Cis","Trans")),
+                 cell_fun=function(j, i,x,y,  width, height, fill) {
+                   # since grid.text can also be vectorized
+                   grid.text(as.matrix(cbind(cell_dt1,cell_dt2,cell_dt3,cell_dt4,cell_dt6))[i,j], x, y,hjust=0.5,vjust=0.8 ,
+                             gp = gpar(fontsize = 8))},
+                 column_split = factor(c(rep("Pimary PCa",ncol(MS_ht1)),rep("PC organoids",ncol(MS_ht2)),rep("CAA PDXs",ncol(MS_ht3)),rep("TC",ncol(MS_ht4)),""),
+                                       levels=c("Pimary PCa","PC organoids","CAA PDXs","TC","")),
+                 height = unit(nrow(MS_ht)*0.25,"cm"),width = unit(ncol(MS_ht)*0.22,"cm"),
+                 heatmap_legend_param = list(border="black"),border=T)
+    
+  anot_plt1=Heatmap(anot_ht1,col = c("0"="white","1"="#00b6a5"),cluster_rows = F,cluster_columns = F,rect_gp = gpar(col="black"),row_labels = df[row_nm,"Peptide"],column_names_side = "top",
+                      column_names_gp = gpar(fontsize=7),row_names_gp = gpar(fontsize=7),row_names_side = "left",
+                      show_row_names = T,show_row_dend = F,row_title_rot = 0,row_title_gp = gpar(fontsize=8),name="MS",
+                      na_col = "white",
+                      height = unit(nrow(MS_ht)*0.25,"cm"),width = unit(ncol(anot_ht1)*0.25,"cm"))
+  anot_plt2=Heatmap(anot_ht2,col = c("0"="white","1"="#e75640"),cluster_rows = F,cluster_columns = F,rect_gp = gpar(col="black"),row_labels = df[row_nm,"Peptide"],column_names_side = "top",
+                      column_names_gp = gpar(fontsize=7),row_names_gp = gpar(fontsize=7),row_names_side = "left",
+                      show_row_names = T,show_row_dend = F,row_title_rot = 0,row_title_gp = gpar(fontsize=8),name="MS",
+                      na_col = "white",
+                      height = unit(nrow(MS_ht)*0.25,"cm"),width = unit(ncol(anot_ht2)*0.25,"cm"))
+    
+  IPS_plt=Heatmap(IPS_ht,col = c("0"="white","1"="#766cb1"),cluster_rows = F,cluster_columns = F,rect_gp = gpar(col="black"),row_labels = df[row_nm,"Peptide"],column_names_side = "top",
+                    column_names_gp = gpar(fontsize=7),row_names_gp = gpar(fontsize=7),row_names_side = "left",
+                    show_row_names = T,show_row_dend = F,row_title_rot = 0,row_title_gp = gpar(fontsize=8),name="MS",
+                    right_annotation = hr4,height = unit(nrow(MS_ht)*0.25,"cm"),width = unit(0.75,"cm"))
+    
+ #pdf(paste("Fig.3_Heatmap.pdf",sep=""),height=14,width =18)
+ plt1+anot_plt1+anot_plt2+IPS_plt
+ #dev.off()
+}
+```
