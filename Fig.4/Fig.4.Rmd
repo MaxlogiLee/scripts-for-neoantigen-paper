@@ -1,0 +1,137 @@
+---
+title: "Fig.4"
+output: html_document
+---
+
+### Fig.4C
+```{r,warning=F,message=F,fig.height=3,fig.width=8}
+library(cowplot)
+library(ggplot2)
+
+meta_Tcell=read.csv("data/Umap_5samples_Tcell_meta_CD8_clean.csv")
+celltype_col=c("#1F77B4FF","#D62728FF","#2CA02CFF","#7C878EFF","#FF7F0EFF","#8C564BFF","#9467BDFF","#E377C2FF","#6EE2FFFF","#8F7700FF","#5C88DAFF","#84BD00FF","#FFCD00FF")[1:6]
+names(celltype_col)=unique(meta_Tcell$celltype_Final)
+meta_Tcell$Celltype=meta_Tcell$celltype_Final
+
+###############cell frequency
+meta=meta_Tcell
+stat=as.data.frame(table(meta[,c("orig.ident","Celltype")]))
+stat$freq=stat$Freq/table(meta$orig.ident)[stat$orig.ident]
+stat$Total=table(meta$orig.ident)[stat$orig.ident]
+stat$label=paste(stat$Freq,"/",stat$Total,sep="")
+
+stat=stat[order(stat$freq,decreasing = T),]
+stat$orig.ident=factor(stat$orig.ident,levels = c("tai1","tai2","liugan","sss","wutai"))
+
+p0=ggplot(stat,aes(x=orig.ident,y=freq,fill=Celltype))+geom_col(width=0.7)+
+  #geom_text(aes(label=label),size=1.5,vjust=-0.5)+
+  xlab("")+ylab("Frequency of cells")+
+  ggtitle(label="Proportion of cells by origin",subtitle = "Label = cells/total cells")+
+  theme_classic()+scale_fill_manual(values = celltype_col)+
+  theme(plot.title = element_text(size=8),plot.subtitle = element_text(size=5),
+        axis.text.x = element_text(angle = 45,vjust = 1,hjust =1))+
+  scale_y_continuous(breaks = c(0,0.25,0.5,0.75,1),labels = paste(c(0,25,50,75,100),"%",sep=""),limits = c(0,1))+
+  guides(fill=guide_legend(ncol=1))+
+  scale_x_discrete(breaks=c("tai1","tai2","liugan","wutai","sss"),
+                   labels=c("Exp1-SSS","Exp1-STS","GILGFVFTL","DMSO","Exp2-SSS"))
+
+###############cell umap
+p1=ggplot(data=meta_Tcell,aes(x=umap_1,y=umap_2,col=Celltype))+geom_point(size=0.01,alpha=0.4)+
+  scale_color_manual(values =celltype_col)+theme_classic()+
+  guides(color=guide_legend(override.aes = list(size=2)))+
+  ggtitle("All samples")+
+  theme(plot.title = element_text(hjust = 0.5,face="bold"))+
+  guides(col=guide_legend(ncol = 1,override.aes = list(alpha = 1,size=2)))
+
+plot_grid(p0,p1,nrow=1,rel_widths = c(1,1))
+```
+
+
+### Fig.4D
+```{r,warning=F,message=F,fig.height=3,fig.width=15}
+p2=ggplot(data=meta_Tcell,aes(x=umap_1,y=umap_2,col=Celltype))+
+  geom_point(size=0.01,col="grey90",data = meta_Tcell[meta_Tcell$orig.ident!="tai1",])+
+  geom_point(size=0.01,alpha=0.4,data = meta_Tcell[meta_Tcell$orig.ident=="tai1",])+
+  scale_color_manual(values =celltype_col)+theme_classic()+
+  guides(color=guide_legend(override.aes = list(size=2)))+
+  ggtitle("Exp1-SSS")+
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = 0.5,face="bold"))
+
+p3=ggplot(data=meta_Tcell,aes(x=umap_1,y=umap_2,col=Celltype))+
+  geom_point(size=0.01,col="grey90",data = meta_Tcell[meta_Tcell$orig.ident!="tai2",])+
+  geom_point(size=0.01,alpha=0.4,data = meta_Tcell[meta_Tcell$orig.ident=="tai2",])+
+  scale_color_manual(values =celltype_col)+theme_classic()+
+  guides(color=guide_legend(override.aes = list(size=2)))+
+  ggtitle("Exp1-STS")+
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = 0.5,face="bold"))
+
+p4=ggplot(data=meta_Tcell,aes(x=umap_1,y=umap_2,col=Celltype))+
+  geom_point(size=0.01,col="grey90",data = meta_Tcell[meta_Tcell$orig.ident!="liugan",])+
+  geom_point(size=0.01,alpha=0.4,data = meta_Tcell[meta_Tcell$orig.ident=="liugan",])+
+  scale_color_manual(values =celltype_col)+theme_classic()+
+  guides(color=guide_legend(override.aes = list(size=2)))+
+  ggtitle("GILGFVFTL")+
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = 0.5,face="bold"))
+
+p5=ggplot(data=meta_Tcell,aes(x=umap_1,y=umap_2,col=Celltype))+
+  geom_point(size=0.01,col="grey90",data = meta_Tcell[meta_Tcell$orig.ident!="wutai",])+
+  geom_point(size=0.01,alpha=0.4,data = meta_Tcell[meta_Tcell$orig.ident=="wutai",])+
+  scale_color_manual(values =celltype_col)+theme_classic()+
+  guides(color=guide_legend(override.aes = list(size=2,alpha=1)))+
+  ggtitle("DMSO")+
+  theme(legend.position = "none",plot.title = element_text(hjust = 0.5,face="bold"))
+p6=ggplot(data=meta_Tcell,aes(x=umap_1,y=umap_2,col=Celltype))+
+  geom_point(size=0.01,col="grey90",data = meta_Tcell[meta_Tcell$orig.ident!="sss",])+
+  geom_point(size=0.01,alpha=0.4,data = meta_Tcell[meta_Tcell$orig.ident=="sss",])+
+  scale_color_manual(values =celltype_col)+theme_classic()+
+  guides(color=guide_legend(override.aes = list(size=2)))+
+  ggtitle("Exp2-SSS")+
+  theme(legend.position = "none",plot.title = element_text(hjust = 0.5,face="bold"))
+
+lgd=cowplot::get_legend(p0)
+plot_grid(p2,p3,p4,p6,p5,nrow=1,rel_widths = c(1,1,1,1,1))
+```
+
+### Fig.4E
+```{r,warning=F,message=F,fig.height=3.5,fig.width=8}
+library(Seurat)
+load("data/CD8_tai_5samples_clean_Annotation.Rdata")
+tcr=c("TRA:CAERSDGQKLLF;TRB:CASSATPGAEQYF",
+      "TRA:CASTTGTASKLTF;TRB:CASSGTDQYTEAFF")
+#sss
+barcode_cdr3=read.csv("data/SSSDLKYLK_contig_annotations_filteredcontig.csv")
+cdr3=barcode_cdr3
+cell_cdr3=merge(barcode_cdr3,cdr3)
+sss_specif_cells=cell_cdr3$barcode
+
+
+sss_tcr=cell_cdr3[is.element(cell_cdr3$cdr3_pair,tcr),]
+sss_tcr=sss_tcr[is.element(paste("sss_",sss_tcr$barcode,sep=""),colnames(sce)),]
+
+sce$sss_tcr="No"
+sce$sss_tcr[match(paste("sss_",sss_tcr$barcode,sep=''),colnames(sce))]=sss_tcr$cdr3_pair
+
+meta=sce@meta.data
+umap_loc=Embeddings(sce,reduction = "umap")
+meta=cbind(meta,umap_loc)
+meta$Celltype=meta$celltype_Final
+meta$Celltype[meta$Celltype=="T_Prol"]="Tpro"
+meta_Tcell=meta
+
+seq=tcr
+seq_p=list()
+for(i in 1:length(seq)){
+  seq_p[[i]]=ggplot(data=meta_Tcell,aes(x=umap_1,y=umap_2,col=Celltype))+
+    geom_point(size=0.01,col="grey90",data = meta_Tcell[meta_Tcell$sss_tcr!=seq[i],])+
+    geom_point(size=0.5,alpha=0.4,data = meta_Tcell[meta_Tcell$sss_tcr==seq[i],])+
+    scale_color_manual(values =celltype_col)+theme_classic()+
+    guides(color=guide_legend(override.aes = list(size=2)))+
+    ggtitle(paste("TCR Exp2 \n",sub(";",";\n",seq[i]),"(",sum(meta_Tcell$sss_tcr==seq[i]),")",sep=""))+
+    theme(plot.title = element_text(hjust = 0.5,face="bold"))
+}
+plot_grid(plotlist = seq_p,nrow=1)
+
+```

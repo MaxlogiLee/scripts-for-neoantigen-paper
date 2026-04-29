@@ -1,0 +1,232 @@
+---
+title: "Fig.5"
+output: html_document
+---
+
+### PCA-01
+```{r,warning=F,message=F}
+library(openxlsx)
+library(ComplexHeatmap)
+#set colors
+type_col=c("#FF7F0EFF","#1F77B4FF","#2CA02CFF","#F0E685FF","#9467BDFF","#8C564BFF","#466983FF","#D62728FF","#E377C2FF","#E377C2FF")
+names(type_col)=c("BN","NCBI_Uniport","Mutation","Fusion","IR","TElocal","TEprof2","DN","Cis","Trans")
+
+
+df=read.xlsx("data/PCA-01_Canonical_NonCanonical_MsHLAp.xlsx")
+df$conserved_type=factor(df$conserved_type,levels =c("Tumor-wide","Highly conserved","Moderatedly conserved","Weakly conserved"))
+df=df[df$ELISPOT==1,]
+  
+df=df[order(df$`source-annotated`,df$conserved_type,df$Peptide),]
+df$Peptide=as.character(df$Peptide)
+row_nm=df$Peptide
+rownames(df)=df$Peptide
+  
+ht1=df[,c(grep("MS_",colnames(df)))]
+colnames(ht1)=sub("MS_","",colnames(ht1))
+ht1[is.na(ht1)]=0
+  
+ht2=df[,c(grep("grep_",colnames(df)))]
+colnames(ht2)=sub("grep_","",colnames(ht2))
+ht2[ht2==0]=""
+ht2[!is.na(ht2)&ht2!=""]="*"
+ht2[is.na(ht2)]=""
+  
+MS_ht=ht1[row_nm,]
+MS_ht[is.na(MS_ht)]=0
+MS_ht[MS_ht!=0]=1
+cell_dt=ht2[row_nm,]
+  
+MS_ht1=MS_ht[,grep("PCA-01",colnames(MS_ht))]
+  
+cell_dt1=cell_dt[,grep("PCA-01",colnames(MS_ht))]
+  
+hr1=rowAnnotation(Source=df[row_nm,"source-annotated"],
+                    Conserved=df[row_nm,"conserved_type"],
+                    RNA_fish=df[row_nm,"RNA_fish"],
+                    ELISPOT=df[row_nm,"ELISPOT"],
+                    Elispot_ID=anno_text(df[row_nm,"Elispot_ID"],gp=gpar(fontsize=6),show_name = T),
+                    border=T,
+                    col=list(Source=type_col,
+                             Conserved=c("Weakly conserved"="#EDF9AF","Moderatedly conserved"="#C7EAB4",
+                                         "Highly conserved"="#45B1CB","Tumor-wide"="#225EA7"),
+                             RNA_fish=c("No"="white","Yes"="#00b6a5"),
+                             ELISPOT=c("1"="#b0d4f0","0"="white")),
+                    gap = unit(4, "points"),simple_anno_size=unit(2,"mm"),
+                    annotation_legend_param=list(border=T))
+  
+plt1=Heatmap(MS_ht1,col = c("white","#7a006f"),cluster_rows = F,cluster_columns = F,row_labels = df[row_nm,"Peptide"],column_names_side = "bottom",
+               right_annotation = hr1,column_names_gp = gpar(fontsize=7),row_names_gp = gpar(fontsize=7),row_names_side = "left",
+               show_row_names = T,show_row_dend = T,row_title_rot = 0,row_title_gp = gpar(fontsize=8),name="MS",border=T,
+               column_split = factor(c(rep("PCA-01",ncol(MS_ht1))),
+                                     levels=c("PCA-01")),
+               height = unit(nrow(MS_ht)*0.25,"cm"),width = unit(ncol(MS_ht1)*0.22,"cm"),
+               heatmap_legend_param = list(border="black"))
+  
+plt1
+```
+
+### PCA-04
+```{r,warning=F,message=F}
+df=read.xlsx("data/PCA-04_Canonical_NonCanonical_MsHLAp.xlsx")
+df$conserved_type=factor(df$conserved_type,levels =c("Tumor-wide","Highly conserved","Moderatedly conserved","Weakly conserved"))
+  
+df=df[df$ELISPOT==1,]
+  
+df=df[order(df$`source-annotated`,df$conserved_type,df$Peptide),]
+df$Peptide=as.character(df$Peptide)
+row_nm=df$Peptide
+rownames(df)=df$Peptide
+  
+ht1=df[,c(grep("MS_",colnames(df)))]
+colnames(ht1)=sub("MS_","",colnames(ht1))
+ht1[is.na(ht1)]=0
+  
+ht2=df[,c(grep("grep_",colnames(df)))]
+colnames(ht2)=sub("grep_","",colnames(ht2))
+ht2[ht2==0]=""
+ht2[!is.na(ht2)&ht2!=""]="*"
+ht2[is.na(ht2)]=""
+  
+MS_ht=ht1[row_nm,]
+MS_ht[is.na(MS_ht)]=0
+MS_ht[MS_ht!=0]=1
+cell_dt=ht2[row_nm,]
+  
+MS_ht1=MS_ht[,c("PCA-04-PST","PCA-04-OBLN-R","PCA-04-OBLN-L","PCA-04-EILN")]
+  
+cell_dt1=cell_dt[,c("PCA-04-PST","PCA-04-OBLN-R","PCA-04-OBLN-L","PCA-04-EILN")]
+  
+hr1=rowAnnotation(Source=df[row_nm,"source-annotated"],
+                    Conserved=df[row_nm,"conserved_type"],
+                    RNA_fish=df[row_nm,"RNA_fish"],
+                    ELISPOT=df[row_nm,"ELISPOT"],
+                    Elispot_ID=anno_text(df[row_nm,"Elispot_ID"],gp=gpar(fontsize=6),show_name = T),
+                    border=T,
+                    col=list(Source=type_col,
+                             Conserved=c("Weakly conserved"="#EDF9AF","Moderatedly conserved"="#C7EAB4",
+                                         "Highly conserved"="#45B1CB","Tumor-wide"="#225EA7"),
+                             RNA_fish=c("No"="white","Yes"="#00b6a5"),
+                             ELISPOT=c("1"="#b0d4f0","0"="white")),
+                    gap = unit(4, "points"),simple_anno_size=unit(2,"mm"),
+                    annotation_legend_param=list(border=T))
+  
+plt1=Heatmap(MS_ht1,col = c("white","#7a006f"),cluster_rows = F,cluster_columns = F,row_labels = df[row_nm,"Peptide"],column_names_side = "bottom",
+               right_annotation = hr1,column_names_gp = gpar(fontsize=7),row_names_gp = gpar(fontsize=7),row_names_side = "left",
+               show_row_names = T,show_row_dend = T,row_title_rot = 0,row_title_gp = gpar(fontsize=8),name="MS",border=T,
+               column_split = factor(c(rep("PCA-04",ncol(MS_ht1))),
+                                     levels=c("PCA-04")),
+               height = unit(nrow(MS_ht)*0.25,"cm"),width = unit(ncol(MS_ht1)*0.22,"cm"),
+               heatmap_legend_param = list(border="black"))
+  
+ plt1
+```
+
+### PCA-05
+```{r,warning=F,message=F}  
+df=read.xlsx("data/PCA-05_Canonical_NonCanonical_MsHLAp.xlsx")
+df$conserved_type=factor(df$conserved_type,levels =c("Tumor-wide","Highly conserved","Moderatedly conserved","Weakly conserved"))
+df=df[df$ELISPOT==1,]
+   
+df=df[order(df$`source-annotated`,df$conserved_type,df$Peptide),]
+df$Peptide=as.character(df$Peptide)
+row_nm=df$Peptide
+rownames(df)=df$Peptide
+  
+ht1=df[,c(grep("MS_",colnames(df)))]
+colnames(ht1)=sub("MS_","",colnames(ht1))
+ht1[is.na(ht1)]=0
+  
+ht2=df[,c(grep("grep_",colnames(df)))]
+colnames(ht2)=sub("grep_","",colnames(ht2))
+ht2[ht2==0]=""
+ht2[!is.na(ht2)&ht2!=""]="*"
+ht2[is.na(ht2)]=""
+  
+MS_ht=ht1[row_nm,]
+MS_ht[is.na(MS_ht)]=0
+MS_ht[MS_ht!=0]=1
+cell_dt=ht2[row_nm,]
+  
+MS_ht1=MS_ht[,c("PCA-05-PST","PCA-05-PVLN-L")]
+  
+cell_dt1=cell_dt[,c("PCA-05-PST","PCA-05-PVLN-L")]
+  
+hr1=rowAnnotation(Source=df[row_nm,"source-annotated"],
+                    Conserved=df[row_nm,"conserved_type"],
+                    RNA_fish=df[row_nm,"RNA_fish"],
+                    ELISPOT=df[row_nm,"ELISPOT"],
+                    Elispot_ID=anno_text(df[row_nm,"Elispot_ID"],gp=gpar(fontsize=6),show_name = T),
+                    border=T,
+                    col=list(Source=type_col,
+                             Conserved=c("Weakly conserved"="#EDF9AF","Moderatedly conserved"="#C7EAB4",
+                                         "Highly conserved"="#45B1CB","Tumor-wide"="#225EA7"),
+                             RNA_fish=c("No"="white","Yes"="#00b6a5"),
+                             ELISPOT=c("1"="#b0d4f0","0"="white")),
+                    gap = unit(4, "points"),simple_anno_size=unit(2,"mm"),
+                    annotation_legend_param=list(border=T))
+  
+plt1=Heatmap(MS_ht1,col = c("white","#7a006f"),cluster_rows = F,cluster_columns = F,row_labels = df[row_nm,"Peptide"],column_names_side = "bottom",
+               right_annotation = hr1,column_names_gp = gpar(fontsize=7),row_names_gp = gpar(fontsize=7),row_names_side = "left",
+               show_row_names = T,show_row_dend = T,row_title_rot = 0,row_title_gp = gpar(fontsize=8),name="MS",border=T,
+               column_split = factor(c(rep("PCA-05",ncol(MS_ht1))),
+                                     levels=c("PCA-05")),
+               height = unit(nrow(MS_ht)*0.25,"cm"),width = unit(ncol(MS_ht1)*0.22,"cm"),
+               heatmap_legend_param = list(border="black"))
+  
+plt1
+```
+
+### PCA-05
+```{r,warning=F,message=F}
+df=read.xlsx("data/PCA-06_Canonical_NonCanonical_MsHLAp.xlsx")
+df$conserved_type=factor(df$conserved_type,levels =c("Tumor-wide","Highly conserved","Moderatedly conserved","Weakly conserved"))
+df=df[df$ELISPOT==1,]
+  
+df=df[order(df$`source-annotated`,df$conserved_type,df$Peptide),]
+df$Peptide=as.character(df$Peptide)
+row_nm=df$Peptide
+rownames(df)=df$Peptide
+  
+ht1=df[,c(grep("MS_",colnames(df)))]
+colnames(ht1)=sub("MS_","",colnames(ht1))
+ht1[is.na(ht1)]=0
+  
+ht2=df[,c(grep("grep_",colnames(df)))]
+colnames(ht2)=sub("grep_","",colnames(ht2))
+ht2[ht2==0]=""
+ht2[!is.na(ht2)&ht2!=""]="*"
+ht2[is.na(ht2)]=""
+  
+MS_ht=ht1[row_nm,]
+MS_ht[is.na(MS_ht)]=0
+MS_ht[MS_ht!=0]=1
+cell_dt=ht2[row_nm,]
+  
+MS_ht1=MS_ht[,c("PCA-06-PST","PCA-06-CILN-L","PCA-06-IILN-R")]
+  
+cell_dt1=cell_dt[,c("PCA-06-PST","PCA-06-CILN-L","PCA-06-IILN-R")]
+  
+hr1=rowAnnotation(Source=df[row_nm,"source-annotated"],
+                    Conserved=df[row_nm,"conserved_type"],
+                    RNA_fish=df[row_nm,"RNA_fish"],
+                    ELISPOT=df[row_nm,"ELISPOT"],
+                    Elispot_ID=anno_text(df[row_nm,"Elispot_ID"],gp=gpar(fontsize=6),show_name = T),
+                    border=T,
+                    col=list(Source=type_col,
+                             Conserved=c("Weakly conserved"="#EDF9AF","Moderatedly conserved"="#C7EAB4",
+                                         "Highly conserved"="#45B1CB","Tumor-wide"="#225EA7"),
+                             RNA_fish=c("No"="white","Yes"="#00b6a5"),
+                             ELISPOT=c("1"="#b0d4f0","0"="white")),
+                    gap = unit(4, "points"),simple_anno_size=unit(2,"mm"),
+                    annotation_legend_param=list(border=T))
+  
+plt1=Heatmap(MS_ht1,col = c("white","#7a006f"),cluster_rows = F,cluster_columns = F,row_labels = df[row_nm,"Peptide"],column_names_side = "bottom",
+               right_annotation = hr1,column_names_gp = gpar(fontsize=7),row_names_gp = gpar(fontsize=7),row_names_side = "left",
+               show_row_names = T,show_row_dend = T,row_title_rot = 0,row_title_gp = gpar(fontsize=8),name="MS",border=T,
+               column_split = factor(c(rep("PCA-06",ncol(MS_ht1))),
+                                     levels=c("PCA-06")),
+               height = unit(nrow(MS_ht)*0.25,"cm"),width = unit(ncol(MS_ht1)*0.22,"cm"),
+               heatmap_legend_param = list(border="black"))
+  
+plt1
+```
